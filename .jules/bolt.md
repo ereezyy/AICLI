@@ -1,0 +1,3 @@
+## 2025-05-13 - [CLI Startup Optimization via Lazy Loading]
+**Learning:** Top-level imports of heavy libraries (e.g., `groq` taking ~0.4s) significantly penalize CLI startup time for every command. Moving these to function-level lazy loading reduces startup latency by ~80%. Additionally, `Click` (v8.x) `CliRunner` can throw `TypeError` if `mix_stderr` is used in certain environments, despite being a documented parameter.
+**Action:** Use lazy loading for non-essential heavy dependencies in CLI tools. Avoid `mix_stderr` in `Click` tests if `TypeError` occurs, as standard `result.output` often captures both streams by default anyway.
