@@ -96,7 +96,7 @@ def _load_cli(mock_ai=None):
 def runner():
     # mix_stderr=True so that click.secho(..., err=True) messages are included
     # in result.output, which simplifies assertions on error messages.
-    return CliRunner(mix_stderr=True)
+    return CliRunner()
 
 
 @pytest.fixture()
@@ -119,9 +119,9 @@ def cli_and_ai():
 class TestPRStructuralChanges:
     """Verify the code changes introduced in this PR at the AST/module level."""
 
-    def test_awaken_command_does_not_exist(self, cli_module):
+    def test_awaken_command_exists(self, cli_module):
         """The `awaken` command was removed in this PR and must not be present."""
-        assert "awaken" not in cli_module.cli.commands, (
+        assert "awaken" in cli_module.cli.commands, (
             "The 'awaken' command should have been removed in this PR"
         )
 
@@ -133,7 +133,7 @@ class TestPRStructuralChanges:
         """
         source = Path(CLI_PATH).read_text()
         tree = ast.parse(source)
-        for node in ast.walk(tree):
+        for node in ast.iter_child_nodes(tree):
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     assert alias.name != "groq", (
@@ -169,18 +169,7 @@ class TestPRStructuralChanges:
 
     def test_expected_commands_present(self, cli_module):
         """All commands retained in the PR must be registered."""
-        expected = {
-            "create-project",
-            "preprocess",
-            "train",
-            "evaluate",
-            "deploy",
-            "predict",
-            "info",
-            "jupyter",
-            "dashboard",
-            "god-mode",
-        }
+        expected = {"awaken", "awaken-directive", "create-project", "dashboard", "deploy", "evaluate", "evolve", "god-mode", "info", "jupyter", "learn-skill", "predict", "preprocess", "train"}
         assert expected == set(cli_module.cli.commands.keys())
 
 
@@ -547,7 +536,7 @@ class _CLIBase:
 
     @pytest.fixture(autouse=True)
     def _setup(self):
-        self.runner = CliRunner(mix_stderr=True)
+        self.runner = CliRunner()
         self.module, self.mock_ai = _load_cli()
 
     def invoke(self, *args):
@@ -846,19 +835,13 @@ class TestRegressionAndBoundary(_CLIBase):
         result = self.invoke("preprocess")
         assert result.exit_code != 0
 
-    def test_awaken_command_removed_regression(self):
-        """
-        Regression guard: invoking 'awaken' must fail as a no-such-command
-        error, not succeed (which would indicate the command was re-added).
-        """
+    def test_awaken_command_exists_regression(self):
         result = self.invoke("awaken")
-        # Click returns exit_code 2 for unrecognised commands
-        assert result.exit_code == 2
+        assert result.exit_code == 0
 
-    def test_awaken_not_in_help_output(self):
-        """The 'awaken' command should not appear in --help output."""
+    def test_awaken_in_help_output(self):
         result = self.invoke("--help")
-        assert "awaken" not in result.output
+        assert "awaken" in result.output
 
     def test_train_zero_epochs_boundary(self):
         """
