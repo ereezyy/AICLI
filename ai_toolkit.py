@@ -1,15 +1,11 @@
-import click
 import os
 import sys
 import time
-import os
-import sys
 import subprocess
-from groq import Groq
-import click
-import ai_toolkit as ai
-
 from pathlib import Path
+
+import click
+from groq import Groq
 
 # Add the ai_toolkit to the path
 sys.path.insert(0, str(Path(__file__).parent))
