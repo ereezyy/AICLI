@@ -578,17 +578,14 @@ def awaken_directive(command_text):
         bold=True,
         blink=True,
     )
-    time.sleep(1)
 
     # 1. Awaken Autonomy
     autonomy = OmnipotentAutonomy()
     click.secho(f"🔥 {autonomy.awaken()}", fg="red", bold=True)
-    time.sleep(1)
 
     # 2. Establish OpenClaw Nexus
     nexus = OpenClawNexus()
     click.secho(f"🔗 {nexus.establish_uplink()}", fg="cyan", bold=True)
-    time.sleep(1)
 
     if not command_text:
         click.secho(
