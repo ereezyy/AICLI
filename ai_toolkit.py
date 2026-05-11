@@ -719,7 +719,7 @@ def awaken():
                     lines = block.split("\n")
                     lang = lines[0].strip()
                     cmd = "\n".join(lines[1:]).strip()
-                    if cmd and lang in ["", "bash", "shell"]:
+                    if cmd and lang in {"", "bash", "shell"}:
                         commands.append(cmd)
 
             for cmd in commands:
