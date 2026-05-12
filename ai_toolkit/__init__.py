@@ -9,12 +9,30 @@ __version__ = "1.0.0"
 __author__ = "ereezyy"
 __email__ = "ereezyy@github.com"
 
-from .data import DataProcessor, load_dataset
-from .models import ModelBuilder, PretrainedModels
-from .training import Trainer
-from .evaluation import Evaluator
-from .deployment import ModelDeployer
-from .automl import AutoMLPipeline
+import importlib
+
+# Lazy loading of submodules
+_SUBMODULES = {
+    "DataProcessor": ".data",
+    "load_dataset": ".data",
+    "ModelBuilder": ".models",
+    "PretrainedModels": ".models",
+    "Trainer": ".training",
+    "Evaluator": ".evaluation",
+    "ModelDeployer": ".deployment",
+    "AutoMLPipeline": ".automl",
+    "nlp": ".nlp",
+    "autonomy": ".autonomy",
+    "skills": ".skills",
+}
+
+
+def __getattr__(name):
+    if name in _SUBMODULES:
+        module_path = _SUBMODULES[name]
+        module = importlib.import_module(module_path, __package__)
+        return getattr(module, name) if hasattr(module, name) else module
+    raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
 # Core functions for quick access
@@ -27,23 +45,31 @@ def create_project(name, description=""):
 
 def load_data(path, **kwargs):
     """Load data from various formats."""
+    from .data import load_dataset
+
     return load_dataset(path, **kwargs)
 
 
 def train(model, data, **kwargs):
     """Train a model with the given data."""
+    from .training import Trainer
+
     trainer = Trainer(model)
     return trainer.fit(data, **kwargs)
 
 
 def evaluate(model, data, **kwargs):
     """Evaluate model performance."""
+    from .evaluation import Evaluator
+
     evaluator = Evaluator()
     return evaluator.evaluate(model, data, **kwargs)
 
 
 def deploy(model, platform="local", **kwargs):
     """Deploy model to specified platform."""
+    from .deployment import ModelDeployer
+
     deployer = ModelDeployer()
     return deployer.deploy(model, platform, **kwargs)
 
@@ -56,18 +82,24 @@ def predict(model, input_data, **kwargs):
 # Quick model creation functions
 def create_image_classifier(num_classes, architecture="resnet50", **kwargs):
     """Create an image classification model."""
+    from .models import ModelBuilder
+
     builder = ModelBuilder()
     return builder.create_image_classifier(num_classes, architecture, **kwargs)
 
 
 def create_text_classifier(num_classes, model_name="bert-base-uncased", **kwargs):
     """Create a text classification model."""
+    from .models import ModelBuilder
+
     builder = ModelBuilder()
     return builder.create_text_classifier(num_classes, model_name, **kwargs)
 
 
 def create_time_series_model(sequence_length, features, **kwargs):
     """Create a time series forecasting model."""
+    from .models import ModelBuilder
+
     builder = ModelBuilder()
     return builder.create_time_series_model(sequence_length, features, **kwargs)
 
