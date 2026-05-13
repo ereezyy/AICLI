@@ -68,6 +68,9 @@ def _load_cli(mock_ai=None):
         "ai_toolkit.automl",
         "ai_toolkit.utils",
         "ai_toolkit.utils.project",
+        "ai_toolkit.nlp",
+        "ai_toolkit.autonomy",
+        "ai_toolkit.skills",
     ]
     saved = {name: sys.modules.get(name) for name in mock_names}
     for name in mock_names:
@@ -94,9 +97,8 @@ def _load_cli(mock_ai=None):
 
 @pytest.fixture()
 def runner():
-    # mix_stderr=True so that click.secho(..., err=True) messages are included
-    # in result.output, which simplifies assertions on error messages.
-    return CliRunner(mix_stderr=True)
+    # mix_stderr=True is not supported in this environment's Click version
+    return CliRunner()
 
 
 @pytest.fixture()
@@ -180,6 +182,9 @@ class TestPRStructuralChanges:
             "jupyter",
             "dashboard",
             "god-mode",
+            "learn-skill",
+            "evolve",
+            "awaken-directive",
         }
         assert expected == set(cli_module.cli.commands.keys())
 
@@ -547,7 +552,7 @@ class _CLIBase:
 
     @pytest.fixture(autouse=True)
     def _setup(self):
-        self.runner = CliRunner(mix_stderr=True)
+        self.runner = CliRunner()
         self.module, self.mock_ai = _load_cli()
 
     def invoke(self, *args):
@@ -858,7 +863,10 @@ class TestRegressionAndBoundary(_CLIBase):
     def test_awaken_not_in_help_output(self):
         """The 'awaken' command should not appear in --help output."""
         result = self.invoke("--help")
-        assert "awaken" not in result.output
+        # Filter out awaken-directive
+        lines = [line for line in result.output.split('\n') if 'awaken-directive' not in line]
+        filtered_output = '\n'.join(lines)
+        assert "awaken" not in filtered_output
 
     def test_train_zero_epochs_boundary(self):
         """
