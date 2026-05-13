@@ -9,12 +9,37 @@ __version__ = "1.0.0"
 __author__ = "ereezyy"
 __email__ = "ereezyy@github.com"
 
-from .data import DataProcessor, load_dataset
-from .models import ModelBuilder, PretrainedModels
-from .training import Trainer
-from .evaluation import Evaluator
-from .deployment import ModelDeployer
-from .automl import AutoMLPipeline
+import sys
+
+# Lazy loading of submodules
+def __getattr__(name):
+    if name in ["DataProcessor", "load_dataset"]:
+        from .data import DataProcessor, load_dataset
+        setattr(sys.modules[__name__], "DataProcessor", DataProcessor)
+        setattr(sys.modules[__name__], "load_dataset", load_dataset)
+        return locals()[name]
+    if name in ["ModelBuilder", "PretrainedModels"]:
+        from .models import ModelBuilder, PretrainedModels
+        setattr(sys.modules[__name__], "ModelBuilder", ModelBuilder)
+        setattr(sys.modules[__name__], "PretrainedModels", PretrainedModels)
+        return locals()[name]
+    if name == "Trainer":
+        from .training import Trainer
+        setattr(sys.modules[__name__], name, Trainer)
+        return Trainer
+    if name == "Evaluator":
+        from .evaluation import Evaluator
+        setattr(sys.modules[__name__], name, Evaluator)
+        return Evaluator
+    if name == "ModelDeployer":
+        from .deployment import ModelDeployer
+        setattr(sys.modules[__name__], name, ModelDeployer)
+        return ModelDeployer
+    if name == "AutoMLPipeline":
+        from .automl import AutoMLPipeline
+        setattr(sys.modules[__name__], name, AutoMLPipeline)
+        return AutoMLPipeline
+    raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
 # Core functions for quick access
@@ -27,23 +52,27 @@ def create_project(name, description=""):
 
 def load_data(path, **kwargs):
     """Load data from various formats."""
+    from .data import load_dataset
     return load_dataset(path, **kwargs)
 
 
 def train(model, data, **kwargs):
     """Train a model with the given data."""
+    from .training import Trainer
     trainer = Trainer(model)
     return trainer.fit(data, **kwargs)
 
 
 def evaluate(model, data, **kwargs):
     """Evaluate model performance."""
+    from .evaluation import Evaluator
     evaluator = Evaluator()
     return evaluator.evaluate(model, data, **kwargs)
 
 
 def deploy(model, platform="local", **kwargs):
     """Deploy model to specified platform."""
+    from .deployment import ModelDeployer
     deployer = ModelDeployer()
     return deployer.deploy(model, platform, **kwargs)
 
@@ -160,8 +189,14 @@ def setup_logging(level=logging.INFO, log_file=None):
     return logger
 
 
-# Initialize default logging
-logger = setup_logging()
+# Initialize default logging (lazy)
+_logger = None
+
+def get_logger():
+    global _logger
+    if _logger is None:
+        _logger = setup_logging()
+    return _logger
 
 
 # Welcome message
