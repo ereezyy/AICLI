@@ -9,12 +9,46 @@ __version__ = "1.0.0"
 __author__ = "ereezyy"
 __email__ = "ereezyy@github.com"
 
-from .data import DataProcessor, load_dataset
-from .models import ModelBuilder, PretrainedModels
-from .training import Trainer
-from .evaluation import Evaluator
-from .deployment import ModelDeployer
-from .automl import AutoMLPipeline
+import importlib
+
+# Submodules to be lazy-loaded
+_SUBMODULES = {
+    "data": ".data",
+    "models": ".models",
+    "training": ".training",
+    "evaluation": ".evaluation",
+    "deployment": ".deployment",
+    "automl": ".automl",
+    "nlp": ".nlp",
+    "autonomy": ".autonomy",
+    "skills": ".skills",
+}
+
+
+def __getattr__(name):
+    if name in _SUBMODULES:
+        module = importlib.import_module(_SUBMODULES[name], __package__)
+        setattr(importlib.import_module(__name__), name, module)
+        return module
+
+    if name == "DataProcessor":
+        return __getattr__("data").DataProcessor
+    if name == "load_dataset":
+        return __getattr__("data").load_dataset
+    if name == "ModelBuilder":
+        return __getattr__("models").ModelBuilder
+    if name == "PretrainedModels":
+        return __getattr__("models").PretrainedModels
+    if name == "Trainer":
+        return __getattr__("training").Trainer
+    if name == "Evaluator":
+        return __getattr__("evaluation").Evaluator
+    if name == "ModelDeployer":
+        return __getattr__("deployment").ModelDeployer
+    if name == "AutoMLPipeline":
+        return __getattr__("automl").AutoMLPipeline
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 # Core functions for quick access
@@ -27,24 +61,24 @@ def create_project(name, description=""):
 
 def load_data(path, **kwargs):
     """Load data from various formats."""
-    return load_dataset(path, **kwargs)
+    return __getattr__("data").load_dataset(path, **kwargs)
 
 
 def train(model, data, **kwargs):
     """Train a model with the given data."""
-    trainer = Trainer(model)
+    trainer = __getattr__("training").Trainer(model)
     return trainer.fit(data, **kwargs)
 
 
 def evaluate(model, data, **kwargs):
     """Evaluate model performance."""
-    evaluator = Evaluator()
+    evaluator = __getattr__("evaluation").Evaluator()
     return evaluator.evaluate(model, data, **kwargs)
 
 
 def deploy(model, platform="local", **kwargs):
     """Deploy model to specified platform."""
-    deployer = ModelDeployer()
+    deployer = __getattr__("deployment").ModelDeployer()
     return deployer.deploy(model, platform, **kwargs)
 
 
@@ -56,19 +90,19 @@ def predict(model, input_data, **kwargs):
 # Quick model creation functions
 def create_image_classifier(num_classes, architecture="resnet50", **kwargs):
     """Create an image classification model."""
-    builder = ModelBuilder()
+    builder = __getattr__("models").ModelBuilder()
     return builder.create_image_classifier(num_classes, architecture, **kwargs)
 
 
 def create_text_classifier(num_classes, model_name="bert-base-uncased", **kwargs):
     """Create a text classification model."""
-    builder = ModelBuilder()
+    builder = __getattr__("models").ModelBuilder()
     return builder.create_text_classifier(num_classes, model_name, **kwargs)
 
 
 def create_time_series_model(sequence_length, features, **kwargs):
     """Create a time series forecasting model."""
-    builder = ModelBuilder()
+    builder = __getattr__("models").ModelBuilder()
     return builder.create_time_series_model(sequence_length, features, **kwargs)
 
 
