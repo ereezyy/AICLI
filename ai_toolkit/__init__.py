@@ -5,17 +5,36 @@ Version: 1.0.0
 License: MIT
 """
 
+import importlib
+import sys
+import logging
+import os
+
 __version__ = "1.0.0"
 __author__ = "ereezyy"
 __email__ = "ereezyy@github.com"
 
-from .data import DataProcessor, load_dataset
-from .models import ModelBuilder, PretrainedModels
-from .training import Trainer
-from .evaluation import Evaluator
-from .deployment import ModelDeployer
-from .automl import AutoMLPipeline
+# Mapping of names to their submodules for lazy loading
+_LAZY_MAPPING = {
+    "DataProcessor": ".data",
+    "load_dataset": ".data",
+    "ModelBuilder": ".models",
+    "PretrainedModels": ".models",
+    "Trainer": ".training",
+    "Evaluator": ".evaluation",
+    "ModelDeployer": ".deployment",
+    "AutoMLPipeline": ".automl",
+}
 
+def __getattr__(name):
+    if name in _LAZY_MAPPING:
+        module_path = _LAZY_MAPPING[name]
+        module = importlib.import_module(module_path, __package__)
+        attr = getattr(module, name)
+        # Cache the attribute in the module's namespace
+        setattr(sys.modules[__name__], name, attr)
+        return attr
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 # Core functions for quick access
 def create_project(name, description=""):
@@ -27,24 +46,31 @@ def create_project(name, description=""):
 
 def load_data(path, **kwargs):
     """Load data from various formats."""
-    return load_dataset(path, **kwargs)
+    # load_dataset will be lazy-loaded via __getattr__ when accessed via module
+    return getattr(sys.modules[__name__], "load_dataset")(path, **kwargs)
 
 
 def train(model, data, **kwargs):
     """Train a model with the given data."""
-    trainer = Trainer(model)
+    # Trainer will be lazy-loaded via __getattr__ when accessed via module
+    trainer_cls = getattr(sys.modules[__name__], "Trainer")
+    trainer = trainer_cls(model)
     return trainer.fit(data, **kwargs)
 
 
 def evaluate(model, data, **kwargs):
     """Evaluate model performance."""
-    evaluator = Evaluator()
+    # Evaluator will be lazy-loaded via __getattr__ when accessed via module
+    evaluator_cls = getattr(sys.modules[__name__], "Evaluator")
+    evaluator = evaluator_cls()
     return evaluator.evaluate(model, data, **kwargs)
 
 
 def deploy(model, platform="local", **kwargs):
     """Deploy model to specified platform."""
-    deployer = ModelDeployer()
+    # ModelDeployer will be lazy-loaded via __getattr__ when accessed via module
+    deployer_cls = getattr(sys.modules[__name__], "ModelDeployer")
+    deployer = deployer_cls()
     return deployer.deploy(model, platform, **kwargs)
 
 
@@ -56,19 +82,25 @@ def predict(model, input_data, **kwargs):
 # Quick model creation functions
 def create_image_classifier(num_classes, architecture="resnet50", **kwargs):
     """Create an image classification model."""
-    builder = ModelBuilder()
+    # ModelBuilder will be lazy-loaded via __getattr__ when accessed via module
+    builder_cls = getattr(sys.modules[__name__], "ModelBuilder")
+    builder = builder_cls()
     return builder.create_image_classifier(num_classes, architecture, **kwargs)
 
 
 def create_text_classifier(num_classes, model_name="bert-base-uncased", **kwargs):
     """Create a text classification model."""
-    builder = ModelBuilder()
+    # ModelBuilder will be lazy-loaded via __getattr__ when accessed via module
+    builder_cls = getattr(sys.modules[__name__], "ModelBuilder")
+    builder = builder_cls()
     return builder.create_text_classifier(num_classes, model_name, **kwargs)
 
 
 def create_time_series_model(sequence_length, features, **kwargs):
     """Create a time series forecasting model."""
-    builder = ModelBuilder()
+    # ModelBuilder will be lazy-loaded via __getattr__ when accessed via module
+    builder_cls = getattr(sys.modules[__name__], "ModelBuilder")
+    builder = builder_cls()
     return builder.create_time_series_model(sequence_length, features, **kwargs)
 
 
@@ -126,11 +158,6 @@ class Config:
         for key, value in kwargs.items():
             if hasattr(cls, key.upper()):
                 setattr(cls, key.upper(), value)
-
-
-# Initialize logging
-import logging
-import os
 
 
 def setup_logging(level=logging.INFO, log_file=None):
@@ -216,7 +243,5 @@ def print_welcome():
 
 # Auto-print welcome message on import
 if __name__ != "__main__":
-    import os
-
     if os.getenv("AI_TOOLKIT_QUIET") != "1":
         print_welcome()
