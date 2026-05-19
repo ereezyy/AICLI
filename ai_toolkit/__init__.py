@@ -5,19 +5,51 @@ Version: 1.0.0
 License: MIT
 """
 
+import sys
+import importlib
+import os
+import logging
+
 __version__ = "1.0.0"
 __author__ = "ereezyy"
 __email__ = "ereezyy@github.com"
 
-from .data import DataProcessor, load_dataset
-from .models import ModelBuilder, PretrainedModels
-from .training import Trainer
-from .evaluation import Evaluator
-from .deployment import ModelDeployer
-from .automl import AutoMLPipeline
+# Map of attributes to their submodules for lazy loading
+_LAZY_ATTRIBUTES = {
+    "DataProcessor": ".data",
+    "load_dataset": ".data",
+    "ModelBuilder": ".models",
+    "PretrainedModels": ".models",
+    "Trainer": ".training",
+    "Evaluator": ".evaluation",
+    "ModelDeployer": ".deployment",
+    "AutoMLPipeline": ".automl",
+    "nlp": ".nlp",
+    "autonomy": ".autonomy",
+    "skills": ".skills",
+}
 
 
-# Core functions for quick access
+def __getattr__(name):
+    """Lazy load submodules and classes."""
+    if name in _LAZY_ATTRIBUTES:
+        module_path = _LAZY_ATTRIBUTES[name]
+        module = importlib.import_module(module_path, __package__)
+
+        if name in ["nlp", "autonomy", "skills"]:
+            # For submodules, we return the module itself
+            setattr(sys.modules[__name__], name, module)
+            return module
+
+        # For classes/functions, we extract them from the module
+        attr = getattr(module, name)
+        setattr(sys.modules[__name__], name, attr)
+        return attr
+
+    raise AttributeError(f"module {__name__} has no attribute {name}")
+
+
+# Core functions for quick access - these use getattr to trigger lazy loading
 def create_project(name, description=""):
     """Create a new AI project with organized structure."""
     from .utils.project import ProjectManager
@@ -27,24 +59,27 @@ def create_project(name, description=""):
 
 def load_data(path, **kwargs):
     """Load data from various formats."""
-    return load_dataset(path, **kwargs)
+    return getattr(sys.modules[__name__], "load_dataset")(path, **kwargs)
 
 
 def train(model, data, **kwargs):
     """Train a model with the given data."""
-    trainer = Trainer(model)
+    trainer_class = getattr(sys.modules[__name__], "Trainer")
+    trainer = trainer_class(model)
     return trainer.fit(data, **kwargs)
 
 
 def evaluate(model, data, **kwargs):
     """Evaluate model performance."""
-    evaluator = Evaluator()
+    evaluator_class = getattr(sys.modules[__name__], "Evaluator")
+    evaluator = evaluator_class()
     return evaluator.evaluate(model, data, **kwargs)
 
 
 def deploy(model, platform="local", **kwargs):
     """Deploy model to specified platform."""
-    deployer = ModelDeployer()
+    deployer_class = getattr(sys.modules[__name__], "ModelDeployer")
+    deployer = deployer_class()
     return deployer.deploy(model, platform, **kwargs)
 
 
@@ -56,19 +91,22 @@ def predict(model, input_data, **kwargs):
 # Quick model creation functions
 def create_image_classifier(num_classes, architecture="resnet50", **kwargs):
     """Create an image classification model."""
-    builder = ModelBuilder()
+    builder_class = getattr(sys.modules[__name__], "ModelBuilder")
+    builder = builder_class()
     return builder.create_image_classifier(num_classes, architecture, **kwargs)
 
 
 def create_text_classifier(num_classes, model_name="bert-base-uncased", **kwargs):
     """Create a text classification model."""
-    builder = ModelBuilder()
+    builder_class = getattr(sys.modules[__name__], "ModelBuilder")
+    builder = builder_class()
     return builder.create_text_classifier(num_classes, model_name, **kwargs)
 
 
 def create_time_series_model(sequence_length, features, **kwargs):
     """Create a time series forecasting model."""
-    builder = ModelBuilder()
+    builder_class = getattr(sys.modules[__name__], "ModelBuilder")
+    builder = builder_class()
     return builder.create_time_series_model(sequence_length, features, **kwargs)
 
 
@@ -126,11 +164,6 @@ class Config:
         for key, value in kwargs.items():
             if hasattr(cls, key.upper()):
                 setattr(cls, key.upper(), value)
-
-
-# Initialize logging
-import logging
-import os
 
 
 def setup_logging(level=logging.INFO, log_file=None):
@@ -216,7 +249,5 @@ def print_welcome():
 
 # Auto-print welcome message on import
 if __name__ != "__main__":
-    import os
-
     if os.getenv("AI_TOOLKIT_QUIET") != "1":
         print_welcome()

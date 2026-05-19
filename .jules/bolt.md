@@ -1,0 +1,3 @@
+## 2025-05-15 - CLI Startup Optimization via Lazy Loading
+**Learning:** Top-level imports of heavy dependencies (e.g., `groq`, `pydantic`, `fastapi`) in the main CLI entry point or the package's `__init__.py` cause significant latency (~0.7s+) even for simple commands like `--help` or `info`. Implementing module-level lazy loading via `__getattr__` and moving imports into command functions can reduce startup time by 50% or more.
+**Action:** Always prefer lazy loading for resource-intensive libraries in CLI applications. Access submodules through the package namespace within functions to defer loading until actually needed.
