@@ -94,9 +94,8 @@ def _load_cli(mock_ai=None):
 
 @pytest.fixture()
 def runner():
-    # mix_stderr=True so that click.secho(..., err=True) messages are included
-    # in result.output, which simplifies assertions on error messages.
-    return CliRunner(mix_stderr=True)
+    # mix_stderr=True can cause TypeError in some Click versions.
+    return CliRunner()
 
 
 @pytest.fixture()
@@ -180,6 +179,9 @@ class TestPRStructuralChanges:
             "jupyter",
             "dashboard",
             "god-mode",
+            "learn-skill",
+            "evolve",
+            "awaken-directive",
         }
         assert expected == set(cli_module.cli.commands.keys())
 
@@ -547,7 +549,7 @@ class _CLIBase:
 
     @pytest.fixture(autouse=True)
     def _setup(self):
-        self.runner = CliRunner(mix_stderr=True)
+        self.runner = CliRunner()
         self.module, self.mock_ai = _load_cli()
 
     def invoke(self, *args):
@@ -858,7 +860,10 @@ class TestRegressionAndBoundary(_CLIBase):
     def test_awaken_not_in_help_output(self):
         """The 'awaken' command should not appear in --help output."""
         result = self.invoke("--help")
-        assert "awaken" not in result.output
+        # Ensure 'awaken ' (with space) or exact match 'awaken' command is not there,
+        # but 'awaken-directive' is allowed.
+        import re
+        assert not re.search(r"\bawaken\s+", result.output)
 
     def test_train_zero_epochs_boundary(self):
         """
