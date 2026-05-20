@@ -5,16 +5,39 @@ Version: 1.0.0
 License: MIT
 """
 
+import sys
+import os
+import logging
+
 __version__ = "1.0.0"
 __author__ = "ereezyy"
 __email__ = "ereezyy@github.com"
 
-from .data import DataProcessor, load_dataset
-from .models import ModelBuilder, PretrainedModels
-from .training import Trainer
-from .evaluation import Evaluator
-from .deployment import ModelDeployer
-from .automl import AutoMLPipeline
+# Lazy loading of sub-modules
+def __getattr__(name):
+    if name in [
+        "DataProcessor", "load_dataset", "ModelBuilder", "PretrainedModels",
+        "Trainer", "Evaluator", "ModelDeployer", "AutoMLPipeline"
+    ]:
+        if name in ["DataProcessor", "load_dataset"]:
+            from . import data
+            return getattr(data, name)
+        elif name in ["ModelBuilder", "PretrainedModels"]:
+            from . import models
+            return getattr(models, name)
+        elif name == "Trainer":
+            from . import training
+            return getattr(training, name)
+        elif name == "Evaluator":
+            from . import evaluation
+            return getattr(evaluation, name)
+        elif name == "ModelDeployer":
+            from . import deployment
+            return getattr(deployment, name)
+        elif name == "AutoMLPipeline":
+            from . import automl
+            return getattr(automl, name)
+    raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
 # Core functions for quick access
@@ -27,23 +50,27 @@ def create_project(name, description=""):
 
 def load_data(path, **kwargs):
     """Load data from various formats."""
-    return load_dataset(path, **kwargs)
+    # Access via sys.modules to trigger __getattr__ or get the already loaded attribute
+    return getattr(sys.modules[__name__], "load_dataset")(path, **kwargs)
 
 
 def train(model, data, **kwargs):
     """Train a model with the given data."""
+    Trainer = getattr(sys.modules[__name__], "Trainer")
     trainer = Trainer(model)
     return trainer.fit(data, **kwargs)
 
 
 def evaluate(model, data, **kwargs):
     """Evaluate model performance."""
+    Evaluator = getattr(sys.modules[__name__], "Evaluator")
     evaluator = Evaluator()
     return evaluator.evaluate(model, data, **kwargs)
 
 
 def deploy(model, platform="local", **kwargs):
     """Deploy model to specified platform."""
+    ModelDeployer = getattr(sys.modules[__name__], "ModelDeployer")
     deployer = ModelDeployer()
     return deployer.deploy(model, platform, **kwargs)
 
@@ -56,18 +83,21 @@ def predict(model, input_data, **kwargs):
 # Quick model creation functions
 def create_image_classifier(num_classes, architecture="resnet50", **kwargs):
     """Create an image classification model."""
+    ModelBuilder = getattr(sys.modules[__name__], "ModelBuilder")
     builder = ModelBuilder()
     return builder.create_image_classifier(num_classes, architecture, **kwargs)
 
 
 def create_text_classifier(num_classes, model_name="bert-base-uncased", **kwargs):
     """Create a text classification model."""
+    ModelBuilder = getattr(sys.modules[__name__], "ModelBuilder")
     builder = ModelBuilder()
     return builder.create_text_classifier(num_classes, model_name, **kwargs)
 
 
 def create_time_series_model(sequence_length, features, **kwargs):
     """Create a time series forecasting model."""
+    ModelBuilder = getattr(sys.modules[__name__], "ModelBuilder")
     builder = ModelBuilder()
     return builder.create_time_series_model(sequence_length, features, **kwargs)
 
@@ -129,10 +159,6 @@ class Config:
 
 
 # Initialize logging
-import logging
-import os
-
-
 def setup_logging(level=logging.INFO, log_file=None):
     """Setup logging configuration."""
 
@@ -216,7 +242,5 @@ def print_welcome():
 
 # Auto-print welcome message on import
 if __name__ != "__main__":
-    import os
-
     if os.getenv("AI_TOOLKIT_QUIET") != "1":
         print_welcome()
