@@ -2,9 +2,8 @@
 Tests for ai_toolkit.py CLI.
 
 This module tests the CLI commands defined in ai_toolkit.py, covering:
-- Removal of the `awaken` command (PR change)
-- Removal of top-level groq/subprocess imports (PR change)
-- Correct behaviour of all remaining commands
+- Lazy loading of heavy dependencies
+- Correct behaviour of all registered commands
 - Error-handling paths (exception → sys.exit(1))
 - Default option values
 - Branching logic (deploy local vs cloud, train model types, template handling)
@@ -22,8 +21,8 @@ from click.testing import CliRunner
 
 # ---------------------------------------------------------------------------
 # Helpers to load the CLI module with a fully-mocked ai_toolkit package.
-# The ai_toolkit package cannot be imported normally after this PR because its
-# submodules (data, models, training, …) were deleted.
+# The ai_toolkit package cannot be imported normally during these tests
+# because its submodules (data, models, training, …) are being mocked.
 # ---------------------------------------------------------------------------
 
 CLI_PATH = str(Path(__file__).parent.parent / "ai_toolkit.py")
@@ -94,13 +93,13 @@ def _load_cli(mock_ai=None):
 
 @pytest.fixture()
 def runner():
-    # mix_stderr=True so that click.secho(..., err=True) messages are included
-    # in result.output, which simplifies assertions on error messages.
-    return CliRunner(mix_stderr=True)
+    """Returns a CliRunner instance for invoking CLI commands."""
+    return CliRunner()
 
 
 @pytest.fixture()
 def cli_module():
+    """Returns the loaded CLI module."""
     module, _ = _load_cli()
     return module
 
@@ -112,43 +111,41 @@ def cli_and_ai():
 
 
 # ===========================================================================
-# 1. PR-specific structural changes
+# 1. Structural changes and import optimizations
 # ===========================================================================
 
 
 class TestPRStructuralChanges:
-    """Verify the code changes introduced in this PR at the AST/module level."""
+    """Verify code structure and import optimizations at the AST level."""
 
-    def test_awaken_command_does_not_exist(self, cli_module):
-        """The `awaken` command was removed in this PR and must not be present."""
-        assert "awaken" not in cli_module.cli.commands, (
-            "The 'awaken' command should have been removed in this PR"
+    def test_awaken_command_exists(self, cli_module):
+        """Verify that the 'awaken' command is present in the CLI."""
+        assert "awaken" in cli_module.cli.commands, (
+            "The 'awaken' command should be registered"
         )
 
     def test_groq_not_imported_at_top_level(self):
         """
-        'groq' was removed as a top-level import.
-        Parse the source AST to confirm there is no top-level 'from groq import …'
-        or 'import groq' statement.
+        'groq' must not be imported at the top level to avoid startup latency.
         """
         source = Path(CLI_PATH).read_text()
         tree = ast.parse(source)
-        for node in ast.walk(tree):
+        top_level_nodes = list(ast.iter_child_nodes(tree))
+        for node in top_level_nodes:
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     assert alias.name != "groq", (
-                        "Top-level 'import groq' found but should have been removed"
+                        "Top-level 'import groq' found but should be deferred"
                     )
             elif isinstance(node, ast.ImportFrom):
                 if node.module == "groq":
                     pytest.fail(
-                        "Top-level 'from groq import …' found but should have been removed"
+                        "Top-level 'from groq import …' found but should be deferred"
                     )
 
     def test_subprocess_not_imported_at_top_level(self):
         """
-        'subprocess' was moved inside the `jupyter` command body; it must not
-        appear as a top-level import any more.
+        'subprocess' must be imported inside command bodies to avoid startup latency.
         """
         source = Path(CLI_PATH).read_text()
         tree = ast.parse(source)
@@ -160,15 +157,15 @@ class TestPRStructuralChanges:
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     assert alias.name != "subprocess", (
-                        "Top-level 'import subprocess' should have been removed"
+                        "Top-level 'import subprocess' found but should be deferred"
                     )
             elif isinstance(node, ast.ImportFrom):
                 assert node.module != "subprocess", (
-                    "Top-level 'from subprocess import …' should have been removed"
+                    "Top-level 'from subprocess import …' found but should be deferred"
                 )
 
     def test_expected_commands_present(self, cli_module):
-        """All commands retained in the PR must be registered."""
+        """All expected commands must be registered in the CLI."""
         expected = {
             "create-project",
             "preprocess",
@@ -180,6 +177,10 @@ class TestPRStructuralChanges:
             "jupyter",
             "dashboard",
             "god-mode",
+            "learn-skill",
+            "evolve",
+            "awaken-directive",
+            "awaken",
         }
         assert expected == set(cli_module.cli.commands.keys())
 
@@ -547,7 +548,7 @@ class _CLIBase:
 
     @pytest.fixture(autouse=True)
     def _setup(self):
-        self.runner = CliRunner(mix_stderr=True)
+        self.runner = CliRunner()
         self.module, self.mock_ai = _load_cli()
 
     def invoke(self, *args):
@@ -846,19 +847,11 @@ class TestRegressionAndBoundary(_CLIBase):
         result = self.invoke("preprocess")
         assert result.exit_code != 0
 
-    def test_awaken_command_removed_regression(self):
-        """
-        Regression guard: invoking 'awaken' must fail as a no-such-command
-        error, not succeed (which would indicate the command was re-added).
-        """
-        result = self.invoke("awaken")
-        # Click returns exit_code 2 for unrecognised commands
-        assert result.exit_code == 2
-
-    def test_awaken_not_in_help_output(self):
-        """The 'awaken' command should not appear in --help output."""
+    def test_awaken_in_help_output(self):
+        """The 'awaken' command should appear in --help output."""
         result = self.invoke("--help")
-        assert "awaken" not in result.output
+        # Check for " awaken " to ensure it's the exact command, not a substring
+        assert "\n  awaken  " in result.output
 
     def test_train_zero_epochs_boundary(self):
         """
