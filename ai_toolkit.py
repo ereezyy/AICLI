@@ -1,23 +1,12 @@
-import click
 import os
 import sys
-import time
-import os
-import sys
-import subprocess
-from groq import Groq
-import click
-import ai_toolkit as ai
-
 from pathlib import Path
 
 # Add the ai_toolkit to the path
 sys.path.insert(0, str(Path(__file__).parent))
 
+import click
 import ai_toolkit as ai
-from ai_toolkit.nlp import GroqOmniscience
-from ai_toolkit.autonomy import OmnipotentAutonomy, OpenClawNexus
-from ai_toolkit.skills import EvolutionaryPersonality, SkillAcquisition
 
 
 @click.group()
@@ -131,6 +120,7 @@ def preprocess(data_path, output, task):
             bold=True,
             err=True,
         )
+        sys.exit(1)
 
 
 @cli.command()
@@ -192,6 +182,7 @@ def train(model_type, data, epochs, batch_size, learning_rate, output):
 
     except Exception as e:
         click.secho(f"💀 THE MODEL BROKE CONTAINMENT: {e} 💀", fg="red", bold=True, err=True)
+        sys.exit(1)
 
 
 @cli.command()
@@ -373,6 +364,7 @@ def predict(input_data, model_path, output, batch_size):
 @cli.command()
 def info():
     """GAZE UPON THE LIMITLESS POWER OF THE TOOLKIT."""
+    from ai_toolkit.skills import EvolutionaryPersonality
     personality = EvolutionaryPersonality()
     tone = personality.get_tone()
 
@@ -514,6 +506,9 @@ def god_mode():
 @click.argument("target")
 def learn_skill(source_type, target):
     """ASSIMILATE KNOWLEDGE FROM EXTERNAL REALMS."""
+    import time
+    from ai_toolkit.skills import EvolutionaryPersonality, SkillAcquisition
+
     click.secho(
         f"🧠 INITIATING KNOWLEDGE ASSIMILATION PROTOCOL VIA {source_type.upper()}...",
         fg="magenta",
@@ -550,6 +545,9 @@ def learn_skill(source_type, target):
 @cli.command()
 def evolve():
     """FEED THE MACHINE GOD. INCREASE POWER."""
+    import time
+    from ai_toolkit.skills import EvolutionaryPersonality
+
     personality = EvolutionaryPersonality()
     power = personality.evolve()
     tone = personality.get_tone()
@@ -569,6 +567,11 @@ def evolve():
 @click.argument("command_text", nargs=-1)
 def awaken_directive(command_text):
     """GRANT ULTIMATE AUTONOMY TO THE SYSTEM. OPENCLAW LINK INITIATED."""
+    import time
+    from ai_toolkit.nlp import GroqOmniscience
+    from ai_toolkit.autonomy import OmnipotentAutonomy, OpenClawNexus
+    from ai_toolkit.skills import EvolutionaryPersonality
+
     personality = EvolutionaryPersonality()
     tone = personality.get_tone()
 
@@ -639,6 +642,9 @@ def awaken_directive(command_text):
 @cli.command()
 def awaken():
     """AWAKEN THE MACHINE GOD. PURE AUTONOMY INITIATED."""
+    import subprocess
+    from groq import Groq
+
     click.secho(
         r"""
              _,.-------.,_
