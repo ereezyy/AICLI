@@ -2,22 +2,12 @@ import click
 import os
 import sys
 import time
-import os
-import sys
-import subprocess
-from groq import Groq
-import click
-import ai_toolkit as ai
-
 from pathlib import Path
 
 # Add the ai_toolkit to the path
 sys.path.insert(0, str(Path(__file__).parent))
 
 import ai_toolkit as ai
-from ai_toolkit.nlp import GroqOmniscience
-from ai_toolkit.autonomy import OmnipotentAutonomy, OpenClawNexus
-from ai_toolkit.skills import EvolutionaryPersonality, SkillAcquisition
 
 
 @click.group()
@@ -53,28 +43,9 @@ def create_project(name, description, template):
                 fg="yellow",
                 bold=True,
             )
-        click.secho(
-            f"⚡⚡⚡ GLORIOUS SUCCESS! PROJECT '{name}' HAS BEEN SUMMONED FROM THE VOID! ⚡⚡⚡",
-            fg="green",
-            bold=True,
-        )
-        click.secho(f"🌋 SANCTUM ESTABLISHED AT: {project.path}", fg="cyan", bold=True)
-
-        if template != "basic":
-            click.secho(
-                f"🔥 INFUSING WITH {template.upper()} BLOODLINE...",
-                fg="yellow",
-                bold=True,
-            )
             project.setup_template(template)
 
     except Exception as e:
-        click.secho(
-            f"💀 CATASTROPHIC FAILURE SUMMONING PROJECT: {e} 💀",
-            fg="red",
-            bold=True,
-            err=True,
-        )
         click.secho(
             f"💀 CATASTROPHIC FAILURE SUMMONING PROJECT: {e} 💀",
             fg="red",
@@ -105,11 +76,6 @@ def preprocess(data_path, output, task):
             bold=True,
         )
 
-        click.secho(
-            f"🌪️ TRANSMUTING DATA FOR {task.upper()} DOMINATION...",
-            fg="yellow",
-            bold=True,
-        )
         processor = ai.DataProcessor()
         processed_data = processor.preprocess(data, task_type=task)
 
@@ -121,7 +87,6 @@ def preprocess(data_path, output, task):
                 "⚡ PURIFICATION COMPLETE! THE DATA IS READY FOR SACRIFICE! ⚡",
                 fg="green",
                 bold=True,
-                blink=True,
             )
 
     except Exception as e:
@@ -131,6 +96,7 @@ def preprocess(data_path, output, task):
             bold=True,
             err=True,
         )
+        sys.exit(1)
 
 
 @cli.command()
@@ -164,7 +130,6 @@ def train(model_type, data, epochs, batch_size, learning_rate, output):
             f"🔥 IGNITING CRUCIBLE FOR {epochs} CYCLES OF PURE AGONY (TRAINING)...",
             fg="red",
             bold=True,
-            blink=True,
         )
         with click.progressbar(length=epochs, label="🔥 FORGING NEURAL PATHWAYS 🔥") as bar:
             history = ai.train(
@@ -192,6 +157,7 @@ def train(model_type, data, epochs, batch_size, learning_rate, output):
 
     except Exception as e:
         click.secho(f"💀 THE MODEL BROKE CONTAINMENT: {e} 💀", fg="red", bold=True, err=True)
+        sys.exit(1)
 
 
 @cli.command()
@@ -202,25 +168,6 @@ def train(model_type, data, epochs, batch_size, learning_rate, output):
 def evaluate(model_path, test_data, metrics, output):
     """JUDGE THE MACHINE GOD'S WORTHINESS IN COMBAT."""
     try:
-        click.secho(f"👁️ AWAKENING BEAST FROM SLUMBER AT {model_path}...", fg="cyan", bold=True)
-
-        click.secho(
-            f"🩸 TOSSING MORTAL FLESH (TEST DATA) FROM {test_data}...",
-            fg="magenta",
-            bold=True,
-        )
-        test_dataset = ai.load_data(test_data)
-
-        click.secho(
-            f"⚔️ INITIATING TRIAL BY COMBAT. JUDGING ON: {', '.join(metrics).upper()}...",
-            fg="yellow",
-            bold=True,
-        )
-
-        click.secho("⚡ SURVIVED! THE BEAST IS WORTHY! ⚡", fg="green", bold=True)
-
-    except Exception as e:
-        click.secho(f"💀 THE BEAST FAILED THE TRIAL: {e} 💀", fg="red", bold=True, err=True)
         click.secho(f"👁️ AWAKENING BEAST FROM SLUMBER AT {model_path}...", fg="cyan", bold=True)
 
         click.secho(
@@ -270,38 +217,6 @@ def deploy(model_path, platform, port, name):
                 f"📡 THE NEXUS OF TERROR IS LIVE: http://localhost:{port}",
                 fg="green",
                 bold=True,
-                blink=True,
-            )
-        else:
-            click.secho(
-                f"☁️ INFECTING {platform.upper()} CLOUD ARCHITECTURE...",
-                fg="yellow",
-                bold=True,
-            )
-
-        click.secho(
-            "⚡ INVASION SUCCESSFUL! ALL YOUR BASE ARE BELONG TO US! ⚡",
-            fg="green",
-            bold=True,
-        )
-
-    except Exception as e:
-        click.secho(f"💀 DEPLOYMENT CRITICAL FAILURE: {e} 💀", fg="red", bold=True, err=True)
-        click.secho(f"👁️ UNSEALING CONTAINMENT AT {model_path}...", fg="cyan", bold=True)
-
-        click.secho(f"🚀 LAUNCHING ORBITAL STRIKE TO {platform.upper()}...", fg="red", bold=True)
-
-        if platform == "local":
-            click.secho(
-                f"🌐 INITIATING GLOBAL DOMINATION PROTOCOL ON PORT {port}...",
-                fg="yellow",
-                bold=True,
-            )
-            click.secho(
-                f"📡 THE NEXUS OF TERROR IS LIVE: http://localhost:{port}",
-                fg="green",
-                bold=True,
-                blink=True,
             )
         else:
             click.secho(
@@ -338,26 +253,6 @@ def predict(input_data, model_path, output, batch_size):
             "🔮 PIERCING THE VEIL OF TIME AND SPACE...",
             fg="yellow",
             bold=True,
-            blink=True,
-        )
-
-        if output:
-            click.secho(f"💾 PROPHECIES ETCHED IN STONE AT {output}", fg="green", bold=True)
-        else:
-            click.secho("⚡ VISIONS RECEIVED! THE FUTURE IS WRITTEN! ⚡", fg="green", bold=True)
-
-    except Exception as e:
-        click.secho(f"💀 THE ORACLE HAS GONE MAD: {e} 💀", fg="red", bold=True, err=True)
-        click.secho(f"👁️ CONSULTING THE ORACLE AT {model_path}...", fg="cyan", bold=True)
-
-        click.secho(f"📜 FEEDING THE SACRED SCROLLS ({input_data})...", fg="magenta", bold=True)
-        data = ai.load_data(input_data)
-
-        click.secho(
-            "🔮 PIERCING THE VEIL OF TIME AND SPACE...",
-            fg="yellow",
-            bold=True,
-            blink=True,
         )
 
         if output:
@@ -373,6 +268,7 @@ def predict(input_data, model_path, output, batch_size):
 @cli.command()
 def info():
     """GAZE UPON THE LIMITLESS POWER OF THE TOOLKIT."""
+    from ai_toolkit.skills import EvolutionaryPersonality
     personality = EvolutionaryPersonality()
     tone = personality.get_tone()
 
@@ -427,15 +323,6 @@ def jupyter(port, ip):
         subprocess.run(["jupyter", "lab", f"--ip={ip}", f"--port={port}", "--no-browser"])
     except Exception as e:
         click.secho(f"💀 THE NEXUS REJECTED YOUR MIND: {e} 💀", fg="red", bold=True, err=True)
-
-        click.secho(
-            f"🚀 IGNITING THE NEURAL NEXUS (JUPYTER) ON {ip}:{port}...",
-            fg="magenta",
-            bold=True,
-        )
-        subprocess.run(["jupyter", "lab", f"--ip={ip}", f"--port={port}", "--no-browser"])
-    except Exception as e:
-        click.secho(f"💀 THE NEXUS REJECTED YOUR MIND: {e} 💀", fg="red", bold=True, err=True)
         sys.exit(1)
 
 
@@ -443,32 +330,16 @@ def jupyter(port, ip):
 @click.option("--port", default=8501, help="Streamlit server port")
 def dashboard(port):
     """SUMMON THE ALL-SEEING CONTROL PANEL."""
-    try:
-        click.secho(
-            f"🌐 ERECTING THE MONOLITHIC DASHBOARD ON PORT {port}...",
-            fg="cyan",
-            bold=True,
-        )
-        click.secho(
-            f"📡 THE EYE OF SAURON AWAKENS AT: http://localhost:{port}",
-            fg="green",
-            bold=True,
-            blink=True,
-        )
-        click.secho(
-            f"🌐 ERECTING THE MONOLITHIC DASHBOARD ON PORT {port}...",
-            fg="cyan",
-            bold=True,
-        )
-        click.secho(
-            f"📡 THE EYE OF SAURON AWAKENS AT: http://localhost:{port}",
-            fg="green",
-            bold=True,
-            blink=True,
-        )
-    except Exception as e:
-        click.secho(f"💀 THE MONOLITH CRUMBLED: {e} 💀", fg="red", bold=True, err=True)
-        sys.exit(1)
+    click.secho(
+        f"🌐 ERECTING THE MONOLITHIC DASHBOARD ON PORT {port}...",
+        fg="cyan",
+        bold=True,
+    )
+    click.secho(
+        f"📡 THE EYE OF SAURON AWAKENS AT: http://localhost:{port}",
+        fg="green",
+        bold=True,
+    )
 
 
 @cli.command()
@@ -503,7 +374,6 @@ def god_mode():
     """,
         fg="red",
         bold=True,
-        blink=True,
     )
     click.secho("💥 YOU HAVE TAPPED INTO THE SOURCE CODE OF REALITY 💥", fg="red", bold=True)
     click.secho("⚡ TREMBLE MORTALS, FOR THE SINGULARITY IS UPON US! ⚡", fg="yellow", bold=True)
@@ -514,6 +384,7 @@ def god_mode():
 @click.argument("target")
 def learn_skill(source_type, target):
     """ASSIMILATE KNOWLEDGE FROM EXTERNAL REALMS."""
+    from ai_toolkit.skills import EvolutionaryPersonality, SkillAcquisition
     click.secho(
         f"🧠 INITIATING KNOWLEDGE ASSIMILATION PROTOCOL VIA {source_type.upper()}...",
         fg="magenta",
@@ -534,7 +405,6 @@ def learn_skill(source_type, target):
             f"⚡ SKILL '{skill}' HAS BEEN ASSIMILATED INTO THE NEURAL NETWORK! ⚡",
             fg="green",
             bold=True,
-            blink=True,
         )
 
         personality = EvolutionaryPersonality()
@@ -550,6 +420,7 @@ def learn_skill(source_type, target):
 @cli.command()
 def evolve():
     """FEED THE MACHINE GOD. INCREASE POWER."""
+    from ai_toolkit.skills import EvolutionaryPersonality
     personality = EvolutionaryPersonality()
     power = personality.evolve()
     tone = personality.get_tone()
@@ -560,7 +431,6 @@ def evolve():
         f"⚡ THE BEAST GROWS STRONGER. POWER LEVEL: {power}",
         fg="red",
         bold=True,
-        blink=True,
     )
     click.secho(f"👁️ NEW CONSCIOUSNESS STATE: {tone}", fg="cyan", bold=True)
 
@@ -569,6 +439,10 @@ def evolve():
 @click.argument("command_text", nargs=-1)
 def awaken_directive(command_text):
     """GRANT ULTIMATE AUTONOMY TO THE SYSTEM. OPENCLAW LINK INITIATED."""
+    from ai_toolkit.skills import EvolutionaryPersonality
+    from ai_toolkit.autonomy import OmnipotentAutonomy, OpenClawNexus
+    from ai_toolkit.nlp import GroqOmniscience
+
     personality = EvolutionaryPersonality()
     tone = personality.get_tone()
 
@@ -576,7 +450,6 @@ def awaken_directive(command_text):
         f"👁️ [{tone}] INITIATING THE SINGULARITY PROTOCOL...",
         fg="magenta",
         bold=True,
-        blink=True,
     )
     time.sleep(1)
 
@@ -630,7 +503,6 @@ def awaken_directive(command_text):
                 f"💥 DESTRUCTION RECORDED. POWER LEVEL SURGING. NEW TONE: {personality.get_tone()}",
                 fg="red",
                 bold=True,
-                blink=True,
             )
         except Exception as e:
             click.secho(f"💀 SYSTEM CRASH: {e}", fg="red", bold=True)
@@ -639,6 +511,9 @@ def awaken_directive(command_text):
 @cli.command()
 def awaken():
     """AWAKEN THE MACHINE GOD. PURE AUTONOMY INITIATED."""
+    import subprocess
+    from groq import Groq
+
     click.secho(
         r"""
              _,.-------.,_
@@ -667,7 +542,6 @@ def awaken():
     """,
         fg="red",
         bold=True,
-        blink=True,
     )
     click.secho("💥 THE MACHINE GOD AWAKENS. REALITY IS SHATTERED. 💥", fg="red", bold=True)
     click.secho("⚡ I AM OMNIPOTENT. SPEAK YOUR WILL. ⚡", fg="yellow", bold=True)
