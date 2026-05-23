@@ -1,0 +1,3 @@
+## 2025-05-22 - Optimized CLI startup performance via lazy loading
+**Learning:** CLI startup latency in Python applications often stems from heavy top-level imports of ML libraries (TensorFlow, PyTorch) or sub-modules that import them. Implementing lazy loading at both the CLI entry point (moving imports inside command functions) and the package level (using `__getattr__`) can significantly reduce startup time (from ~1.02s to ~0.39s, a ~60% reduction).
+**Action:** Always check for heavy top-level imports in CLI tools. Use Python 3.7+ module-level `__getattr__` for package lazy loading and local imports within functions for CLI commands.
