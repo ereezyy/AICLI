@@ -9,12 +9,31 @@ __version__ = "1.0.0"
 __author__ = "ereezyy"
 __email__ = "ereezyy@github.com"
 
-from .data import DataProcessor, load_dataset
-from .models import ModelBuilder, PretrainedModels
-from .training import Trainer
-from .evaluation import Evaluator
-from .deployment import ModelDeployer
-from .automl import AutoMLPipeline
+import sys
+import importlib
+
+# Map of submodules for lazy loading
+_lazy_map = {
+    "DataProcessor": ".data",
+    "load_dataset": ".data",
+    "ModelBuilder": ".models",
+    "PretrainedModels": ".models",
+    "Trainer": ".training",
+    "Evaluator": ".evaluation",
+    "ModelDeployer": ".deployment",
+    "AutoMLPipeline": ".automl",
+}
+
+
+def __getattr__(name):
+    if name in _lazy_map:
+        module_path = _lazy_map[name]
+        module = importlib.import_module(module_path, __package__)
+        # Cache the imported member in this module
+        val = getattr(module, name)
+        setattr(sys.modules[__name__], name, val)
+        return val
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 # Core functions for quick access
@@ -27,24 +46,24 @@ def create_project(name, description=""):
 
 def load_data(path, **kwargs):
     """Load data from various formats."""
-    return load_dataset(path, **kwargs)
+    return getattr(sys.modules[__name__], "load_dataset")(path, **kwargs)
 
 
 def train(model, data, **kwargs):
     """Train a model with the given data."""
-    trainer = Trainer(model)
+    trainer = getattr(sys.modules[__name__], "Trainer")(model)
     return trainer.fit(data, **kwargs)
 
 
 def evaluate(model, data, **kwargs):
     """Evaluate model performance."""
-    evaluator = Evaluator()
+    evaluator = getattr(sys.modules[__name__], "Evaluator")()
     return evaluator.evaluate(model, data, **kwargs)
 
 
 def deploy(model, platform="local", **kwargs):
     """Deploy model to specified platform."""
-    deployer = ModelDeployer()
+    deployer = getattr(sys.modules[__name__], "ModelDeployer")()
     return deployer.deploy(model, platform, **kwargs)
 
 
@@ -56,19 +75,19 @@ def predict(model, input_data, **kwargs):
 # Quick model creation functions
 def create_image_classifier(num_classes, architecture="resnet50", **kwargs):
     """Create an image classification model."""
-    builder = ModelBuilder()
+    builder = getattr(sys.modules[__name__], "ModelBuilder")()
     return builder.create_image_classifier(num_classes, architecture, **kwargs)
 
 
 def create_text_classifier(num_classes, model_name="bert-base-uncased", **kwargs):
     """Create a text classification model."""
-    builder = ModelBuilder()
+    builder = getattr(sys.modules[__name__], "ModelBuilder")()
     return builder.create_text_classifier(num_classes, model_name, **kwargs)
 
 
 def create_time_series_model(sequence_length, features, **kwargs):
     """Create a time series forecasting model."""
-    builder = ModelBuilder()
+    builder = getattr(sys.modules[__name__], "ModelBuilder")()
     return builder.create_time_series_model(sequence_length, features, **kwargs)
 
 
